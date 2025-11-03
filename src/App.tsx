@@ -1,18 +1,15 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import MainTerminal from './views/MainTerminal/MainTerminal';
-import CreatePallet from './views/CreatePallet/CreatePallet';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import CodeValidator from './views/CodeValidator/CodeValidator';
 
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<MainTerminal />} />
-        <Route path="/create-pallet" element={<CreatePallet />} />
-        <Route path="/validate-code" element={<CodeValidator />} />
+        <Route path="/" element={<CodeValidator />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
   );
 }
 
-export default App
+export default App;

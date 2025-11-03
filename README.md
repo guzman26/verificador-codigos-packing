@@ -1,6 +1,19 @@
-# 📦 Verificador de Códigos - Lomas Altas
+# 📦 Verificador de Códigos de Cajas
 
-Sistema de verificación y validación de códigos de cajas para operarios.
+**Aplicación standalone para validación de códigos de cajas de 16 dígitos**
+
+## 🎯 Propósito
+
+Esta aplicación es una herramienta **offline** de validación de códigos. NO se conecta a ningún backend ni gestiona inventario. Su único objetivo es **verificar si un código es válido** según las reglas de formato establecidas.
+
+## ✨ Características
+
+- ✅ Validación **local** de códigos de 16 dígitos
+- ✅ Detección de errores específicos (día 9, calibre 23, etc.)
+- ✅ Feedback visual (verde/rojo) y auditivo
+- ✅ Historial de validaciones en sesión
+- ✅ Estadísticas en tiempo real
+- ✅ Sin conexión a internet requerida
 
 ## 🚀 Inicio Rápido
 
@@ -11,70 +24,91 @@ npm run dev
 
 La aplicación estará disponible en `http://localhost:5173`
 
-## 📱 Rutas
+## 🔍 ¿Qué valida?
 
-- `/` - Terminal de Control (Dashboard principal)
-- `/validate-code` - Validador de Códigos de Cajas
-- `/create-pallet` - Crear Nuevo Pallet
+El validador verifica que un código de 16 dígitos cumpla con:
 
-## ✨ Características
+| Campo | Posición | Valores Válidos |
+|-------|----------|-----------------|
+| Día de la semana | 0 | 1-7 |
+| Semana del año | 1-2 | 01-53 |
+| Año | 3-4 | YY (ej: 25) |
+| Operario | 5-6 | 00-99 |
+| Empacadora | 7 | 1-9 |
+| Turno | 8 | 1, 2, 3 |
+| **Calibre** | **9-10** | **01-09, 11-16 (NO 23)** |
+| Formato | 11 | 1, 2, 3 |
+| Empresa | 12 | 1-5 |
+| Contador | 13-15 | 001-999 |
 
-### 🔍 Validador de Códigos
-- Validación de códigos de 16 dígitos
-- Detección de errores (día 9, calibre 23, dígitos extra, etc.)
-- Feedback visual (verde/rojo) y auditivo
-- Mensajes de ayuda contextuales
-
-### 📊 Dashboard
-- Vista en tiempo real de cajas y pallets
-- Estadísticas en el header
-- Terminal de control centralizado
-
-### 📦 Gestión de Pallets
-- Creación de pallets
-- Asignación automática de cajas
-
-## 🔧 Validador de Códigos
-
-El código es autodescriptivo:
-
-- `src/utils/boxCodeValidator.ts` - Funciones de validación
-- `src/views/CodeValidator/CodeValidator.tsx` - Interfaz de usuario
-
-### Ejemplos
+## 📊 Ejemplos
 
 ```
-4272516302111001       ✅ VÁLIDO
-9272516302111001       ❌ Día 9 inválido (solo 1-7)
-4272516312311001       ❌ Calibre 23 NO EXISTE
-42725163021110012345   ❌ Dígitos extra
+✅ VÁLIDO:   4272516302111001
+❌ INVÁLIDO: 9272516302111001  (día 9 no existe)
+❌ INVÁLIDO: 4272516312311001  (calibre 23 no existe)
+❌ INVÁLIDO: 427251630211100   (solo 15 dígitos)
 ```
 
-## 🛠️ Tecnologías
+## 🛠️ Build para Producción
 
-- React 18 + TypeScript
-- Vite
-- React Router
-- Lucide React (iconos)
+```bash
+npm run build
+```
+
+El build genera archivos estáticos en `/dist` que pueden desplegarse en cualquier servidor web.
+
+## 📱 Uso
+
+1. Abrir la aplicación
+2. Escanear código con lector de barras (o ingresar manualmente)
+3. Ver resultado instantáneo
+4. Repetir para siguiente código
+
+## 🔒 Sin Backend
+
+Esta aplicación **NO**:
+- ❌ Se conecta a APIs
+- ❌ Guarda datos en base de datos
+- ❌ Gestiona inventario de cajas/pallets
+- ❌ Requiere internet
+
+Solo valida códigos localmente en el navegador.
+
+## 🧪 Testing
+
+Para probar rápidamente:
+
+```bash
+# Código válido
+4272516302111001
+
+# Día inválido
+9272516302111001
+
+# Calibre inválido
+4272516312311001
+```
 
 ## 📂 Estructura
 
 ```
 src/
-├── components/     # Componentes reutilizables
-├── hooks/          # Custom hooks
-├── services/       # API services
-├── utils/          # Utilidades (validación, etc.)
-└── views/          # Vistas principales
+├── utils/
+│   └── boxCodeValidator.ts    # Lógica de validación (standalone)
+├── views/
+│   └── CodeValidator/          # Vista principal
+└── styles/
+    └── theme.ts               # Tema visual
 ```
 
-## 🔨 Build
+## 🛠️ Tecnologías
 
-```bash
-npm run build
-npm run preview
-```
+- React 18 + TypeScript
+- Vite (build rápido)
+- Validación 100% local
+- Sin dependencias de backend
 
 ---
 
-**Nota**: El código está diseñado para ser autodescriptivo. Las funciones de validación tienen nombres claros y cada una maneja un aspecto específico (día, calibre, turno, etc.).
+**Nota**: Para un sistema completo de gestión de inventario con backend, ver el repositorio `lector-codigos-desktop-packing`.
