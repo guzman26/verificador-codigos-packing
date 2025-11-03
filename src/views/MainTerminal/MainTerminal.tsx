@@ -7,7 +7,7 @@ import { theme } from '../../styles/theme';
 import { useDashboardData } from '../../hooks/useDashboardData';
 
 const MainTerminal: React.FC = () => {
-  const { stats, loading } = useDashboardData();
+  const { stats } = useDashboardData();
 
   return (
     <main style={styles.main}>

@@ -1,6 +1,5 @@
 export const theme = {
   colors: {
-    // macOS-inspired color palette
     background: {
       primary: '#F5F5F7',
       secondary: '#FFFFFF',
@@ -13,6 +12,10 @@ export const theme = {
       tertiary: '#515154',
       inverse: '#F5F5F7',
     },
+    primary: '#0071E3',
+    success: '#34C759',
+    error: '#FF3B30',
+    warning: '#FF9500',
     accent: {
       blue: '#0071E3',
       blueHover: '#0077ED',
