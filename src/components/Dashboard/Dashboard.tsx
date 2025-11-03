@@ -5,53 +5,22 @@ import { useCreateBox } from '../../hooks/useCreateBox';
 import ActivePalletsWidget from '../Widgets/ActivePalletsWidget/ActivePalletsWidget';
 import UnassignedBoxesWidget from '../Widgets/UnassignedBoxesWidget/UnassignedBoxesWidget';
 
-/**
- * Dashboard is a pure composition layer; no data-fetching logic.
- * Redesigned for industrial touchscreen use with high-contrast, 
- * minimalistic interface suitable for factory environments.
- */
 const Dashboard: React.FC = () => {
-  // State for code history and latest code
-  const [codeData, setCodeData] = useState<{ latestCode: string; history: string[] }>({ 
-    latestCode: '', 
-    history: [] 
-  });
-  
-  // Use the createBox hook for processing scanned codes
+  const [codeData, setCodeData] = useState({ latestCode: '', history: [] as string[] });
   const { submit: processCode } = useCreateBox();
 
-  // Handle new code submission
   const handleCodeSubmit = (code: string) => {
-    // Update the history and latest code
     setCodeData(prev => ({
       latestCode: code,
-      history: [code, ...prev.history].slice(0, 10) // Keep only the last 10 codes
+      history: [code, ...prev.history].slice(0, 10)
     }));
-  };
-  const gridStyles: React.CSSProperties = {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: theme.spacing.lg,
-    width: '100%',
-  };
-
-  const primaryWidgetStyles: React.CSSProperties = {
-    gridColumn: 'span 2',
-  };
-
-  const sectionTitleStyles: React.CSSProperties = {
-    fontSize: theme.typography.fontSize.xl,
-    fontWeight: theme.typography.fontWeight.semibold,
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.lg,
   };
 
   return (
     <section>
-      {/* Primary Operations Section */}
-      <h2 style={sectionTitleStyles}>Operaciones Principales</h2>
-      <div style={{ ...gridStyles, marginBottom: theme.spacing['2xl'] }}>
-        <div style={primaryWidgetStyles}>
+      <SectionTitle>Operaciones Principales</SectionTitle>
+      <div style={{ ...styles.grid, marginBottom: theme.spacing['2xl'] }}>
+        <div style={styles.wideColumn}>
           <CodeInputWidget 
             data={codeData} 
             onCodeSubmit={handleCodeSubmit}
@@ -60,11 +29,10 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Inventory Management Section */}
-      <h2 style={sectionTitleStyles}>Gestión de Inventario</h2>
-      <div style={gridStyles}>
+      <SectionTitle>Gestión de Inventario</SectionTitle>
+      <div style={styles.grid}>
         <UnassignedBoxesWidget />
-        <div style={primaryWidgetStyles}>
+        <div style={styles.wideColumn}>
           <ActivePalletsWidget />
         </div>
       </div>
@@ -72,4 +40,28 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+const SectionTitle: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <h2 style={styles.sectionTitle}>{children}</h2>
+);
+
+const styles = {
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gap: theme.spacing.lg,
+    width: '100%',
+  } as React.CSSProperties,
+
+  wideColumn: {
+    gridColumn: 'span 2',
+  } as React.CSSProperties,
+
+  sectionTitle: {
+    fontSize: theme.typography.fontSize.xl,
+    fontWeight: theme.typography.fontWeight.semibold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing.lg,
+  } as React.CSSProperties,
+};
+
+export default Dashboard;

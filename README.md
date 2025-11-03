@@ -1,69 +1,80 @@
-# React + TypeScript + Vite
+# 📦 Verificador de Códigos - Lomas Altas
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Sistema de verificación y validación de códigos de cajas para operarios.
 
-Currently, two official plugins are available:
+## 🚀 Inicio Rápido
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+La aplicación estará disponible en `http://localhost:5173`
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 📱 Rutas
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+- `/` - Terminal de Control (Dashboard principal)
+- `/validate-code` - Validador de Códigos de Cajas
+- `/create-pallet` - Crear Nuevo Pallet
+
+## ✨ Características
+
+### 🔍 Validador de Códigos
+- Validación de códigos de 16 dígitos
+- Detección de errores (día 9, calibre 23, dígitos extra, etc.)
+- Feedback visual (verde/rojo) y auditivo
+- Mensajes de ayuda contextuales
+
+### 📊 Dashboard
+- Vista en tiempo real de cajas y pallets
+- Estadísticas en el header
+- Terminal de control centralizado
+
+### 📦 Gestión de Pallets
+- Creación de pallets
+- Asignación automática de cajas
+
+## 🔧 Validador de Códigos
+
+El código es autodescriptivo:
+
+- `src/utils/boxCodeValidator.ts` - Funciones de validación
+- `src/views/CodeValidator/CodeValidator.tsx` - Interfaz de usuario
+
+### Ejemplos
+
 ```
+4272516302111001       ✅ VÁLIDO
+9272516302111001       ❌ Día 9 inválido (solo 1-7)
+4272516312311001       ❌ Calibre 23 NO EXISTE
+42725163021110012345   ❌ Dígitos extra
+```
+
+## 🛠️ Tecnologías
+
+- React 18 + TypeScript
+- Vite
+- React Router
+- Lucide React (iconos)
+
+## 📂 Estructura
+
+```
+src/
+├── components/     # Componentes reutilizables
+├── hooks/          # Custom hooks
+├── services/       # API services
+├── utils/          # Utilidades (validación, etc.)
+└── views/          # Vistas principales
+```
+
+## 🔨 Build
+
+```bash
+npm run build
+npm run preview
+```
+
+---
+
+**Nota**: El código está diseñado para ser autodescriptivo. Las funciones de validación tienen nombres claros y cada una maneja un aspecto específico (día, calibre, turno, etc.).
