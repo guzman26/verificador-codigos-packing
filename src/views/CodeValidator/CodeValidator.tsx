@@ -112,7 +112,7 @@ const CodeValidator: React.FC = () => {
             <RuleCard title="Día (pos 0)" value="1-7" description="1=Lun a 7=Dom" />
             <RuleCard title="Semana (pos 1-2)" value="01-53" description="Semana ISO del año" />
             <RuleCard title="Turno (pos 8)" value="1, 2, 3" description="1=Mañana, 2=Tarde, 3=Noche" />
-            <RuleCard title="Calibre (pos 9-10)" value="15 valores" description="01-09, 11-16 (NO 23)" highlight />
+            <RuleCard title="Calibre (pos 9-10)" value="15 valores" description="01-09, 11-16" highlight />
             <RuleCard title="Formato (pos 11)" value="1, 2, 3" description="1=180u, 2=100 JUMBO, 3=Docena" />
             <RuleCard title="Empresa (pos 12)" value="1-5" description="Códigos de empresa válidos" />
           </div>
