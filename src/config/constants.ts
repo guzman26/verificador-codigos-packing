@@ -1,15 +1,14 @@
 /** Configuración global de la aplicación */
 
+import { VALID_CALIBERS, CALIBER_COUNT } from '../constants/calibers';
+
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://api.lomasaltas.com';
 
 export const BOX_CODE_LENGTH = 16;
 export const PALLET_CODE_LENGTH = 14;
 
-export const VALID_CALIBERS = [
-  '01', '02', '03', '04', '05', '06',
-  '07', '08', '09', '11', '12', '13',
-  '14', '15', '16'
-] as const;
+/** Exportar calibres válidos desde la fuente única */
+export { VALID_CALIBERS, CALIBER_COUNT };
 
 export const SHIFTS = {
   MORNING: '1',
@@ -33,7 +32,14 @@ export const COMPANIES = {
 
 export const ROUTES = {
   HOME: '/',
-  VALIDATE_CODE: '/validate-code',
-  CREATE_PALLET: '/create-pallet',
 } as const;
 
+export const VALIDATION_RULES = {
+  DAY_OF_WEEK: { min: 1, max: 7 },
+  WEEK_OF_YEAR: { min: 1, max: 53 },
+  PACKER: { min: 1, max: 9 },
+  CALIBER_COUNT: CALIBER_COUNT, // 15 calibres válidos
+  SHIFT_COUNT: 3,
+  FORMAT_COUNT: 3,
+  COMPANY_COUNT: 5,
+} as const;

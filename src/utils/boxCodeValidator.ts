@@ -3,6 +3,8 @@
  * Detecta: día inválido (9), calibre 23, dígitos extra/faltantes, etc.
  */
 
+import { VALID_CALIBERS, CALIBER_NAMES } from '../constants/calibers';
+
 export interface ValidationError {
   field: string;
   position: string;
@@ -30,27 +32,12 @@ export interface ValidationResult {
   };
 }
 
-const VALID_CALIBERS = ['01', '02', '03', '04', '05', '06', '07', '08', '09', '11', '12', '13', '14', '15', '16'];
-
-const CALIBER_NAMES: Record<string, string> = {
-  '01': 'ESPECIAL BCO', '02': 'EXTRA BCO', '03': 'ESPECIAL COLOR', '04': 'GRANDE BCO',
-  '05': 'EXTRA COLOR', '06': 'GRANDE COLOR', '07': 'MEDIANO BCO', '08': 'SUCIO / TRIZADO',
-  '09': 'TERCERA BCO', '11': 'TERCERA COLOR', '12': 'JUMBO BCO', '13': 'MEDIANO COLOR',
-  '14': 'JUMBO COLOR', '15': 'CUARTA BCO', '16': 'CUARTA COLOR',
-};
-
 const DAY_NAMES = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-
 const SHIFT_NAMES: Record<string, string> = { '1': 'Mañana (06:00-14:00)', '2': 'Tarde (14:00-22:00)', '3': 'Noche (22:00-06:00)' };
-
 const FORMAT_NAMES: Record<string, string> = { '1': '180 unidades', '2': '100 JUMBO', '3': 'Docena' };
-
 const COMPANY_NAMES: Record<string, string> = { '1': 'Lomas Altas', '2': 'Santa Marta', '3': 'Coliumo', '4': 'El Monte', '5': 'Libre' };
 
-/**
- * Valida un código de caja de 16 dígitos completo
- * Verifica: longitud, formato, rango de valores, calibres válidos
- */
+/** Valida un código de caja de 16 dígitos completo */
 export function validateBoxCode(code: string): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: ValidationError[] = [];
@@ -60,32 +47,29 @@ export function validateBoxCode(code: string): ValidationResult {
     return { isValid: false, errors: [{ field: 'código', position: '-', value: '', message: 'El código no puede estar vacío', severity: 'error' }], warnings: [], code: normalizedCode };
   }
 
-  // Validar longitud exacta (16 dígitos)
   if (normalizedCode.length !== 16) {
     errors.push({
       field: 'longitud',
       position: '-',
       value: normalizedCode.length.toString(),
-      message: `Código tiene ${normalizedCode.length} dígitos, debe tener 16`,
+      message: `Código tiene ${normalizedCode.length} dígitos, debe tener exactamente 16`,
       severity: 'error'
     });
   }
 
-  // Validar que solo contenga dígitos
   if (!/^\d+$/.test(normalizedCode)) {
     const invalidChars = normalizedCode.match(/[^\d]/g)?.join(', ') || '';
     errors.push({
       field: 'formato',
       position: '-',
       value: invalidChars,
-      message: `El código solo puede contener números. Caracteres inválidos: ${invalidChars}`,
+      message: `Solo se permiten números. Caracteres inválidos: ${invalidChars}`,
       severity: 'error'
     });
   }
 
   if (errors.length > 0) return { isValid: false, errors, warnings, code: normalizedCode };
 
-  // Extraer campos del código de 16 dígitos
   const dayOfWeek = normalizedCode[0];
   const weekOfYear = normalizedCode.substring(1, 3);
   const year = normalizedCode.substring(3, 5);
@@ -97,7 +81,6 @@ export function validateBoxCode(code: string): ValidationResult {
   const company = normalizedCode[12];
   const counter = normalizedCode.substring(13, 16);
 
-  // Validar cada campo
   validateDayOfWeek(dayOfWeek, errors);
   validateWeekOfYear(weekOfYear, errors);
   validateYearRange(year, warnings);
@@ -120,7 +103,6 @@ export function validateBoxCode(code: string): ValidationResult {
   };
 }
 
-/** Valida que el día sea 1-7 (Lunes a Domingo) */
 function validateDayOfWeek(dayOfWeek: string, errors: ValidationError[]) {
   const dayNum = parseInt(dayOfWeek);
   if (dayNum < 1 || dayNum > 7) {
@@ -134,7 +116,6 @@ function validateDayOfWeek(dayOfWeek: string, errors: ValidationError[]) {
   }
 }
 
-/** Valida que la semana sea 01-53 (rango ISO) */
 function validateWeekOfYear(weekOfYear: string, errors: ValidationError[]) {
   const weekNum = parseInt(weekOfYear);
   if (weekNum < 1 || weekNum > 53) {
@@ -148,7 +129,6 @@ function validateWeekOfYear(weekOfYear: string, errors: ValidationError[]) {
   }
 }
 
-/** Advierte si el año está fuera del rango razonable */
 function validateYearRange(year: string, warnings: ValidationError[]) {
   const yearNum = parseInt(year);
   const currentYear = new Date().getFullYear() % 100;
@@ -163,7 +143,6 @@ function validateYearRange(year: string, warnings: ValidationError[]) {
   }
 }
 
-/** Advierte si operario es 00 */
 function validateOperator(operator: string, warnings: ValidationError[]) {
   if (parseInt(operator) === 0) {
     warnings.push({
@@ -176,7 +155,6 @@ function validateOperator(operator: string, warnings: ValidationError[]) {
   }
 }
 
-/** Valida que empacadora sea 1-9 (no 0) */
 function validatePacker(packer: string, errors: ValidationError[]) {
   const packerNum = parseInt(packer);
   if (packerNum < 1 || packerNum > 9) {
@@ -190,7 +168,6 @@ function validatePacker(packer: string, errors: ValidationError[]) {
   }
 }
 
-/** Valida que turno sea 1, 2 o 3 */
 function validateShift(shift: string, errors: ValidationError[]) {
   if (!['1', '2', '3'].includes(shift)) {
     errors.push({
@@ -203,12 +180,13 @@ function validateShift(shift: string, errors: ValidationError[]) {
   }
 }
 
-/** Valida que calibre esté en la lista de 15 valores válidos */
 function validateCaliber(caliber: string, errors: ValidationError[]) {
-  if (!VALID_CALIBERS.includes(caliber)) {
+  if (!VALID_CALIBERS.includes(caliber as any)) {
     const message = caliber === '23' 
-      ? `Calibre 23 NO EXISTE. Los válidos son: 01-09, 11-16`
-      : `Calibre ${caliber} es inválido. Los válidos son: 01-09, 11-16`;
+      ? `Calibre 23 NO EXISTE. Válidos: ${VALID_CALIBERS.join(', ')}`
+      : caliber === '10'
+      ? `Calibre 10 NO EXISTE. Válidos: ${VALID_CALIBERS.join(', ')}`
+      : `Calibre ${caliber} es inválido. Solo 15 calibres válidos: ${VALID_CALIBERS.join(', ')}`;
     
     errors.push({
       field: 'calibre',
@@ -220,7 +198,6 @@ function validateCaliber(caliber: string, errors: ValidationError[]) {
   }
 }
 
-/** Valida que formato sea 1, 2 o 3 */
 function validateFormat(format: string, errors: ValidationError[]) {
   if (!['1', '2', '3'].includes(format)) {
     errors.push({
@@ -233,7 +210,6 @@ function validateFormat(format: string, errors: ValidationError[]) {
   }
 }
 
-/** Valida que empresa sea 1-5 */
 function validateCompany(company: string, errors: ValidationError[]) {
   if (!['1', '2', '3', '4', '5'].includes(company)) {
     errors.push({
@@ -246,7 +222,6 @@ function validateCompany(company: string, errors: ValidationError[]) {
   }
 }
 
-/** Valida que contador sea 001-999 (no 000) */
 function validateCounter(counter: string, errors: ValidationError[]) {
   if (parseInt(counter) === 0) {
     errors.push({
@@ -259,7 +234,6 @@ function validateCounter(counter: string, errors: ValidationError[]) {
   }
 }
 
-/** Convierte datos parseados a información legible para el operario */
 export function getReadableInfo(parsedData: ValidationResult['parsedData']): Record<string, string> {
   if (!parsedData) return {};
   const dayNum = parseInt(parsedData.dayOfWeek);
@@ -277,11 +251,10 @@ export function getReadableInfo(parsedData: ValidationResult['parsedData']): Rec
   };
 }
 
-/** Proporciona mensajes de ayuda contextuales para errores */
 export function getErrorHelp(error: ValidationError): string {
   const helpMessages: Record<string, string> = {
     'día de la semana': 'Debe ser 1-7: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 7=Domingo',
-    'calibre': 'Válidos: 01, 02, 03, 04, 05, 06, 07, 08, 09, 11, 12, 13, 14, 15, 16 (NO 23)',
+    'calibre': `Solo son válidos estos 15 calibres: ${VALID_CALIBERS.join(', ')}. El calibre 23 NO existe.`,
     'turno': 'Turnos: 1=Mañana (06:00-14:00), 2=Tarde (14:00-22:00), 3=Noche (22:00-06:00)',
     'formato': 'Formatos: 1=180 unidades, 2=100 JUMBO, 3=Docena',
     'empacadora': 'Debe ser 1-9 (no 0)',
@@ -289,4 +262,3 @@ export function getErrorHelp(error: ValidationError): string {
   };
   return helpMessages[error.field] || '';
 }
-

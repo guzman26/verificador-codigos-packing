@@ -10,6 +10,7 @@ const CodeValidator: React.FC = () => {
   const [code, setCode] = useState('');
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBoxCode> | null>(null);
   const [history, setHistory] = useState<Array<{ code: string; isValid: boolean; timestamp: Date }>>([]);
+  const [expandedHelp, setExpandedHelp] = useState<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -20,6 +21,7 @@ const CodeValidator: React.FC = () => {
     if (code.length >= 16) {
       const result = validateBoxCode(code);
       setValidationResult(result);
+      setExpandedHelp(null);
       
       setHistory(prev => [{
         code: result.code,
@@ -32,12 +34,14 @@ const CodeValidator: React.FC = () => {
       }
     } else {
       setValidationResult(null);
+      setExpandedHelp(null);
     }
   }, [code]);
 
   const handleClear = () => {
     setCode('');
     setValidationResult(null);
+    setExpandedHelp(null);
     inputRef.current?.focus();
   };
 
@@ -83,22 +87,23 @@ const CodeValidator: React.FC = () => {
 
             <div style={styles.counter}>
               {code.length} / 16 dígitos
-              {code.length > 0 && code.length < 16 && (
-                <span style={{ color: theme.colors.warning, marginLeft: theme.spacing.sm }}>
-                  (faltan {16 - code.length})
-                </span>
-              )}
             </div>
 
             {code.length > 0 && (
-              <Button variant="secondary" icon={<RotateCcw size={18} />} onClick={handleClear}>
+              <Button variant="secondary" icon={<RotateCcw size={16} />} onClick={handleClear}>
                 Limpiar y escanear otro
               </Button>
             )}
 
-            {validationResult && <ValidationResultCard result={validationResult} />}
+            {validationResult && (
+              <ValidationResultCompact 
+                result={validationResult} 
+                expandedHelp={expandedHelp}
+                onToggleHelp={setExpandedHelp}
+              />
+            )}
 
-            {!validationResult && <InstructionsCard />}
+            {!validationResult && <InstructionsCardCompact />}
           </div>
         </MacWindow>
 
@@ -112,24 +117,6 @@ const CodeValidator: React.FC = () => {
             <RuleCard title="Empresa (pos 12)" value="1-5" description="Códigos de empresa válidos" />
           </div>
         </MacWindow>
-
-        {history.length > 0 && (
-          <MacWindow title="Historial de Validaciones" width="100%" height="auto" resizable={false}>
-            <div style={styles.historySection}>
-              {history.map((item, idx) => (
-                <div key={idx} style={styles.historyItem}>
-                  <div style={styles.historyCode}>{item.code}</div>
-                  <div style={{ 
-                    ...styles.historyStatus,
-                    color: item.isValid ? theme.colors.success : theme.colors.error
-                  }}>
-                    {item.isValid ? '✓ VÁLIDO' : '✗ INVÁLIDO'}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </MacWindow>
-        )}
       </Container>
     </main>
   );
@@ -142,53 +129,75 @@ const StatBadge: React.FC<{ label: string; value: number; color: string }> = ({ 
   </div>
 );
 
-const ValidationResultCard: React.FC<{ result: ReturnType<typeof validateBoxCode> }> = ({ result }) => {
+const ValidationResultCompact: React.FC<{ 
+  result: ReturnType<typeof validateBoxCode>;
+  expandedHelp: number | null;
+  onToggleHelp: (index: number | null) => void;
+}> = ({ result, expandedHelp, onToggleHelp }) => {
   const isValid = result.isValid;
   const bgColor = isValid ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)';
   const borderColor = isValid ? theme.colors.success : theme.colors.error;
 
   return (
-    <div style={{ ...styles.resultCard, backgroundColor: bgColor, borderColor }}>
-      <div style={styles.resultHeader}>
+    <div style={{ ...styles.resultCardCompact, backgroundColor: bgColor, borderColor }}>
+      <div style={styles.resultHeaderCompact}>
         {isValid ? (
-          <CheckCircle size={32} color={theme.colors.success} />
+          <CheckCircle size={24} color={theme.colors.success} />
         ) : (
-          <XCircle size={32} color={theme.colors.error} />
+          <XCircle size={24} color={theme.colors.error} />
         )}
-        <h2 style={{ ...styles.resultTitle, color: borderColor }}>
+        <h2 style={{ ...styles.resultTitleCompact, color: borderColor }}>
           {isValid ? '✓ CÓDIGO VÁLIDO' : '✗ CÓDIGO INVÁLIDO'}
         </h2>
       </div>
 
       {result.errors.length > 0 && (
-        <div style={styles.errorSection}>
-          <h3 style={styles.errorTitle}>Errores encontrados ({result.errors.length}):</h3>
-          <ul style={styles.errorList}>
-            {result.errors.map((error, i) => <ErrorItem key={i} error={error} />)}
-          </ul>
+        <div style={styles.errorSectionCompact}>
+          <h3 style={styles.errorTitleCompact}>Errores ({result.errors.length}):</h3>
+          <div style={styles.errorListCompact}>
+            {result.errors.map((error, i) => (
+              <ErrorItemCompact 
+                key={i} 
+                error={error} 
+                index={i}
+                isExpanded={expandedHelp === i}
+                onToggle={() => onToggleHelp(expandedHelp === i ? null : i)}
+              />
+            ))}
+          </div>
         </div>
       )}
 
       {result.warnings.length > 0 && (
-        <div style={styles.errorSection}>
-          <h3 style={{ ...styles.errorTitle, color: theme.colors.warning }}>
+        <div style={styles.errorSectionCompact}>
+          <h3 style={{ ...styles.errorTitleCompact, color: theme.colors.warning }}>
             Advertencias ({result.warnings.length}):
           </h3>
-          <ul style={styles.errorList}>
-            {result.warnings.map((warning, i) => <ErrorItem key={i} error={warning} />)}
-          </ul>
+          <div style={styles.errorListCompact}>
+            {result.warnings.map((warning, i) => (
+              <ErrorItemCompact 
+                key={i} 
+                error={warning} 
+                index={i + result.errors.length}
+                isExpanded={expandedHelp === (i + result.errors.length)}
+                onToggle={() => {
+                  const idx = i + result.errors.length;
+                  onToggleHelp(expandedHelp === idx ? null : idx);
+                }}
+              />
+            ))}
+          </div>
         </div>
       )}
 
       {isValid && result.parsedData && (
-        <div>
-          <h3 style={styles.infoTitle}>Información del código:</h3>
-          <div style={styles.infoGrid}>
+        <div style={styles.infoSectionCompact}>
+          <h3 style={styles.infoTitleCompact}>Información:</h3>
+          <div style={styles.infoGridCompact}>
             {Object.entries(getReadableInfo(result.parsedData)).map(([key, value]) => (
-              <div key={key} style={styles.infoItem}>
-                <div style={styles.infoLabel}>{key}</div>
-                <div style={styles.infoValue}>{value}</div>
-              </div>
+              <span key={key} style={styles.infoItemCompact}>
+                <strong>{key}:</strong> {value}
+              </span>
             ))}
           </div>
         </div>
@@ -197,44 +206,51 @@ const ValidationResultCard: React.FC<{ result: ReturnType<typeof validateBoxCode
   );
 };
 
-const ErrorItem: React.FC<{ error: ValidationError }> = ({ error }) => {
+const ErrorItemCompact: React.FC<{ 
+  error: ValidationError; 
+  index: number;
+  isExpanded: boolean;
+  onToggle: () => void;
+}> = ({ error, isExpanded, onToggle }) => {
   const color = error.severity === 'error' ? theme.colors.error : theme.colors.warning;
+  const helpText = getErrorHelp(error);
   
   return (
-    <li style={{ ...styles.errorItem, borderLeftColor: color }}>
-      <div style={styles.errorContent}>
+    <div style={{ ...styles.errorItemCompact, borderLeftColor: color }}>
+      <div style={styles.errorContentCompact}>
         {error.severity === 'error' ? (
-          <XCircle size={20} color={theme.colors.error} />
+          <XCircle size={16} color={theme.colors.error} />
         ) : (
-          <AlertTriangle size={20} color={theme.colors.warning} />
+          <AlertTriangle size={16} color={theme.colors.warning} />
         )}
         <div style={{ flex: 1 }}>
-          <div style={{ ...styles.errorField, color }}>
-            {error.field.toUpperCase()} (Posición {error.position})
-          </div>
-          <div style={styles.errorMessage}>{error.message}</div>
-          {getErrorHelp(error) && (
-            <div style={styles.errorHelp}>
-              <Info size={14} style={{ display: 'inline', marginRight: theme.spacing.xs }} />
-              {getErrorHelp(error)}
-            </div>
+          <span style={{ ...styles.errorFieldCompact, color }}>
+            {error.field.toUpperCase()} (pos {error.position}):
+          </span>{' '}
+          <span style={styles.errorMessageCompact}>{error.message}</span>
+          {helpText && (
+            <button
+              onClick={onToggle}
+              style={styles.helpButton}
+              title={isExpanded ? 'Ocultar ayuda' : 'Ver ayuda'}
+            >
+              <Info size={14} />
+            </button>
           )}
         </div>
       </div>
-    </li>
+      {helpText && isExpanded && (
+        <div style={styles.errorHelpCompact}>
+          {helpText}
+        </div>
+      )}
+    </div>
   );
 };
 
-const InstructionsCard: React.FC = () => (
-  <div style={styles.instructionsCard}>
-    <h3 style={styles.instructionsTitle}>📋 Instrucciones:</h3>
-    <ul style={styles.instructionsList}>
-      <li>Escanee el código de barras con el lector</li>
-      <li>El código debe tener exactamente 16 dígitos</li>
-      <li>Solo se permiten números (0-9)</li>
-      <li>La validación es automática e instantánea</li>
-      <li>Los códigos se guardan en el historial local</li>
-    </ul>
+const InstructionsCardCompact: React.FC = () => (
+  <div style={styles.instructionsCardCompact}>
+    <strong>📋 Instrucciones:</strong> Escanee el código de 16 dígitos con el lector. La validación es automática.
   </div>
 );
 
@@ -253,46 +269,56 @@ const RuleCard: React.FC<{ title: string; value: string; description: string; hi
 
 const styles = {
   main: { minHeight: '100vh', backgroundColor: theme.colors.background.primary, display: 'flex', flexDirection: 'column' } as React.CSSProperties,
-  header: { backgroundColor: theme.colors.background.blur, backdropFilter: `blur(${theme.blur.xl})`, borderBottom: `1px solid ${theme.colors.border.light}`, position: 'sticky', top: 0, zIndex: 100, padding: `${theme.spacing.lg} 0` } as React.CSSProperties,
-  headerContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: theme.spacing.xl } as React.CSSProperties,
-  title: { fontSize: theme.typography.fontSize['3xl'], fontWeight: theme.typography.fontWeight.bold, color: theme.colors.text.primary, margin: 0 } as React.CSSProperties,
-  stats: { display: 'flex', gap: theme.spacing.lg, alignItems: 'center' } as React.CSSProperties,
-  statBadge: { display: 'flex', alignItems: 'center', gap: theme.spacing.xs, padding: `${theme.spacing.xs} ${theme.spacing.sm}`, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.md, fontSize: theme.typography.fontSize.sm } as React.CSSProperties,
-  statLabel: { color: theme.colors.text.secondary } as React.CSSProperties,
-  statValue: { fontWeight: theme.typography.fontWeight.semibold } as React.CSSProperties,
-  content: { flex: 1, display: 'flex', flexDirection: 'column', gap: theme.spacing['2xl'], paddingTop: theme.spacing['2xl'], paddingBottom: theme.spacing['3xl'] } as React.CSSProperties,
-  inputSection: { padding: theme.spacing.xl, display: 'flex', flexDirection: 'column', gap: theme.spacing.lg, alignItems: 'center' } as React.CSSProperties,
-  label: { fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.medium, color: theme.colors.text.primary } as React.CSSProperties,
-  input: { fontSize: '2.5rem', fontWeight: theme.typography.fontWeight.bold, fontFamily: 'monospace', padding: theme.spacing.xl, border: '2px solid', borderRadius: theme.borderRadius.lg, backgroundColor: theme.colors.background.secondary, color: theme.colors.text.primary, textAlign: 'center', letterSpacing: '0.1em', outline: 'none', transition: 'all 0.2s ease', width: '100%', maxWidth: '600px' } as React.CSSProperties,
-  counter: { fontSize: theme.typography.fontSize.sm, color: theme.colors.text.secondary, textAlign: 'center' } as React.CSSProperties,
-  resultCard: { padding: theme.spacing.xl, borderRadius: theme.borderRadius.lg, border: '2px solid', marginTop: theme.spacing.xl, width: '100%' } as React.CSSProperties,
-  resultHeader: { display: 'flex', alignItems: 'center', gap: theme.spacing.md, marginBottom: theme.spacing.lg } as React.CSSProperties,
-  resultTitle: { fontSize: theme.typography.fontSize['2xl'], fontWeight: theme.typography.fontWeight.bold, margin: 0 } as React.CSSProperties,
-  errorSection: { marginBottom: theme.spacing.lg } as React.CSSProperties,
-  errorTitle: { fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.error, marginBottom: theme.spacing.md } as React.CSSProperties,
-  errorList: { listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: theme.spacing.md } as React.CSSProperties,
-  errorItem: { padding: theme.spacing.md, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.md, borderLeft: '4px solid' } as React.CSSProperties,
-  errorContent: { display: 'flex', alignItems: 'flex-start', gap: theme.spacing.md } as React.CSSProperties,
-  errorField: { fontWeight: theme.typography.fontWeight.semibold, marginBottom: theme.spacing.xs } as React.CSSProperties,
-  errorMessage: { color: theme.colors.text.primary, marginBottom: theme.spacing.xs } as React.CSSProperties,
-  errorHelp: { fontSize: theme.typography.fontSize.sm, color: theme.colors.text.secondary, marginTop: theme.spacing.sm, paddingTop: theme.spacing.sm, borderTop: `1px solid ${theme.colors.border.light}` } as React.CSSProperties,
-  infoTitle: { fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.text.primary, marginBottom: theme.spacing.md } as React.CSSProperties,
-  infoGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: theme.spacing.md } as React.CSSProperties,
-  infoItem: { padding: theme.spacing.md, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.md } as React.CSSProperties,
-  infoLabel: { fontSize: theme.typography.fontSize.sm, color: theme.colors.text.secondary, fontWeight: theme.typography.fontWeight.medium, marginBottom: theme.spacing.xs } as React.CSSProperties,
-  infoValue: { fontSize: theme.typography.fontSize.lg, color: theme.colors.text.primary, fontWeight: theme.typography.fontWeight.semibold } as React.CSSProperties,
-  instructionsCard: { marginTop: theme.spacing.xl, padding: theme.spacing.lg, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.lg, borderLeft: `4px solid ${theme.colors.primary}`, width: '100%' } as React.CSSProperties,
-  instructionsTitle: { fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.text.primary, marginBottom: theme.spacing.md } as React.CSSProperties,
-  instructionsList: { color: theme.colors.text.secondary, paddingLeft: theme.spacing.xl, lineHeight: 1.6 } as React.CSSProperties,
-  rulesGrid: { padding: theme.spacing.xl, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: theme.spacing.md } as React.CSSProperties,
-  ruleCard: { padding: theme.spacing.md, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.md } as React.CSSProperties,
-  ruleLabel: { fontSize: theme.typography.fontSize.sm, color: theme.colors.text.secondary, fontWeight: theme.typography.fontWeight.medium, marginBottom: theme.spacing.xs } as React.CSSProperties,
-  ruleValue: { fontSize: theme.typography.fontSize.lg, color: theme.colors.text.primary, fontWeight: theme.typography.fontWeight.semibold, marginBottom: theme.spacing.xs } as React.CSSProperties,
-  ruleDescription: { fontSize: theme.typography.fontSize.sm, color: theme.colors.text.secondary } as React.CSSProperties,
-  historySection: { padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.sm, maxHeight: '300px', overflowY: 'auto' } as React.CSSProperties,
-  historyItem: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: theme.spacing.sm, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.sm } as React.CSSProperties,
-  historyCode: { fontFamily: 'monospace', fontSize: theme.typography.fontSize.sm, color: theme.colors.text.primary } as React.CSSProperties,
-  historyStatus: { fontSize: theme.typography.fontSize.sm, fontWeight: theme.typography.fontWeight.semibold } as React.CSSProperties,
+  header: { backgroundColor: theme.colors.background.blur, backdropFilter: `blur(${theme.blur.xl})`, borderBottom: `1px solid ${theme.colors.border.light}`, position: 'sticky', top: 0, zIndex: 100, padding: `${theme.spacing.md} 0` } as React.CSSProperties,
+  headerContent: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: theme.spacing.lg } as React.CSSProperties,
+  title: { fontSize: theme.typography.fontSize['2xl'], fontWeight: theme.typography.fontWeight.bold, color: theme.colors.text.primary, margin: 0 } as React.CSSProperties,
+  stats: { display: 'flex', gap: theme.spacing.md, alignItems: 'center' } as React.CSSProperties,
+  statBadge: { display: 'flex', alignItems: 'center', gap: theme.spacing.xs, padding: `${theme.spacing.xs} ${theme.spacing.sm}`, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.sm, fontSize: theme.typography.fontSize.xs } as React.CSSProperties,
+  statLabel: { color: theme.colors.text.secondary, fontSize: theme.typography.fontSize.xs } as React.CSSProperties,
+  statValue: { fontWeight: theme.typography.fontWeight.semibold, fontSize: theme.typography.fontSize.sm } as React.CSSProperties,
+  content: { flex: 1, display: 'flex', flexDirection: 'column', gap: theme.spacing.lg, paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.xl } as React.CSSProperties,
+  inputSection: { padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.md, alignItems: 'center' } as React.CSSProperties,
+  label: { fontSize: theme.typography.fontSize.base, fontWeight: theme.typography.fontWeight.medium, color: theme.colors.text.primary } as React.CSSProperties,
+  input: { fontSize: '1.8rem', fontWeight: theme.typography.fontWeight.bold, fontFamily: 'monospace', padding: theme.spacing.md, border: '2px solid', borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.background.secondary, color: theme.colors.text.primary, textAlign: 'center', letterSpacing: '0.1em', outline: 'none', transition: 'all 0.2s ease', width: '100%', maxWidth: '500px' } as React.CSSProperties,
+  counter: { fontSize: theme.typography.fontSize.xs, color: theme.colors.text.secondary, textAlign: 'center' } as React.CSSProperties,
+  
+  resultCardCompact: { padding: theme.spacing.md, borderRadius: theme.borderRadius.md, border: '2px solid', marginTop: theme.spacing.md, width: '100%', maxWidth: '800px' } as React.CSSProperties,
+  resultHeaderCompact: { display: 'flex', alignItems: 'center', gap: theme.spacing.sm, marginBottom: theme.spacing.sm } as React.CSSProperties,
+  resultTitleCompact: { fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, margin: 0 } as React.CSSProperties,
+  
+  errorSectionCompact: { marginBottom: theme.spacing.sm } as React.CSSProperties,
+  errorTitleCompact: { fontSize: theme.typography.fontSize.base, fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.error, marginBottom: theme.spacing.xs } as React.CSSProperties,
+  errorListCompact: { display: 'flex', flexDirection: 'column', gap: theme.spacing.xs } as React.CSSProperties,
+  errorItemCompact: { padding: theme.spacing.sm, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.sm, borderLeft: '3px solid' } as React.CSSProperties,
+  errorContentCompact: { display: 'flex', alignItems: 'flex-start', gap: theme.spacing.xs } as React.CSSProperties,
+  errorFieldCompact: { fontWeight: theme.typography.fontWeight.semibold, fontSize: theme.typography.fontSize.sm } as React.CSSProperties,
+  errorMessageCompact: { color: theme.colors.text.primary, fontSize: theme.typography.fontSize.sm } as React.CSSProperties,
+  errorHelpCompact: { fontSize: theme.typography.fontSize.xs, color: theme.colors.text.secondary, marginTop: theme.spacing.xs, paddingTop: theme.spacing.xs, paddingLeft: '20px', borderTop: `1px solid ${theme.colors.border.light}` } as React.CSSProperties,
+  
+  helpButton: { 
+    background: 'none', 
+    border: 'none', 
+    cursor: 'pointer', 
+    padding: theme.spacing.xs, 
+    marginLeft: theme.spacing.xs,
+    display: 'inline-flex',
+    alignItems: 'center',
+    color: theme.colors.primary,
+    verticalAlign: 'middle'
+  } as React.CSSProperties,
+  
+  infoSectionCompact: { marginTop: theme.spacing.sm, paddingTop: theme.spacing.sm, borderTop: `1px solid ${theme.colors.border.light}` } as React.CSSProperties,
+  infoTitleCompact: { fontSize: theme.typography.fontSize.base, fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.text.primary, marginBottom: theme.spacing.xs } as React.CSSProperties,
+  infoGridCompact: { display: 'flex', flexWrap: 'wrap', gap: theme.spacing.sm, fontSize: theme.typography.fontSize.sm } as React.CSSProperties,
+  infoItemCompact: { color: theme.colors.text.secondary } as React.CSSProperties,
+  
+  instructionsCardCompact: { marginTop: theme.spacing.md, padding: theme.spacing.sm, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.md, borderLeft: `3px solid ${theme.colors.primary}`, fontSize: theme.typography.fontSize.sm, color: theme.colors.text.secondary, width: '100%', maxWidth: '500px' } as React.CSSProperties,
+  
+  rulesGrid: { padding: theme.spacing.md, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: theme.spacing.sm } as React.CSSProperties,
+  ruleCard: { padding: theme.spacing.sm, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.sm } as React.CSSProperties,
+  ruleLabel: { fontSize: theme.typography.fontSize.xs, color: theme.colors.text.secondary, fontWeight: theme.typography.fontWeight.medium, marginBottom: '2px' } as React.CSSProperties,
+  ruleValue: { fontSize: theme.typography.fontSize.base, color: theme.colors.text.primary, fontWeight: theme.typography.fontWeight.semibold, marginBottom: '2px' } as React.CSSProperties,
+  ruleDescription: { fontSize: theme.typography.fontSize.xs, color: theme.colors.text.secondary } as React.CSSProperties,
 };
 
 export default CodeValidator;
