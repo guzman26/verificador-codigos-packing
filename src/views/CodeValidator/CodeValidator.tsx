@@ -4,7 +4,7 @@ import { CheckCircle, XCircle, AlertTriangle, Info, RotateCcw } from 'lucide-rea
 import { theme } from '../../styles/theme';
 import { validateBoxCode, getReadableInfo, getErrorHelp } from '../../utils/boxCodeValidator';
 import type { ValidationError } from '../../utils/boxCodeValidator';
-import { playErrorSound } from '../../utils/sound';
+import { playErrorSound, playSuccessSound } from '../../utils/sound';
 
 const CodeValidator: React.FC = () => {
   const [code, setCode] = useState('');
@@ -31,6 +31,8 @@ const CodeValidator: React.FC = () => {
 
       if (!result.isValid) {
         playErrorSound();
+      } else {
+        playSuccessSound();
       }
     } else {
       setValidationResult(null);
@@ -219,9 +221,9 @@ const ErrorItemCompact: React.FC<{
     <div style={{ ...styles.errorItemCompact, borderLeftColor: color }}>
       <div style={styles.errorContentCompact}>
         {error.severity === 'error' ? (
-          <XCircle size={16} color={theme.colors.error} />
+          <XCircle size={20} color={theme.colors.error} />
         ) : (
-          <AlertTriangle size={16} color={theme.colors.warning} />
+          <AlertTriangle size={20} color={theme.colors.warning} />
         )}
         <div style={{ flex: 1 }}>
           <span style={{ ...styles.errorFieldCompact, color }}>
@@ -234,7 +236,7 @@ const ErrorItemCompact: React.FC<{
               style={styles.helpButton}
               title={isExpanded ? 'Ocultar ayuda' : 'Ver ayuda'}
             >
-              <Info size={14} />
+              <Info size={16} />
             </button>
           )}
         </div>
@@ -287,13 +289,13 @@ const styles = {
   resultTitleCompact: { fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.bold, margin: 0 } as React.CSSProperties,
   
   errorSectionCompact: { marginBottom: theme.spacing.sm } as React.CSSProperties,
-  errorTitleCompact: { fontSize: theme.typography.fontSize.base, fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.error, marginBottom: theme.spacing.xs } as React.CSSProperties,
-  errorListCompact: { display: 'flex', flexDirection: 'column', gap: theme.spacing.xs } as React.CSSProperties,
-  errorItemCompact: { padding: theme.spacing.sm, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.sm, borderLeft: '3px solid' } as React.CSSProperties,
-  errorContentCompact: { display: 'flex', alignItems: 'flex-start', gap: theme.spacing.xs } as React.CSSProperties,
-  errorFieldCompact: { fontWeight: theme.typography.fontWeight.semibold, fontSize: theme.typography.fontSize.sm } as React.CSSProperties,
-  errorMessageCompact: { color: theme.colors.text.primary, fontSize: theme.typography.fontSize.sm } as React.CSSProperties,
-  errorHelpCompact: { fontSize: theme.typography.fontSize.xs, color: theme.colors.text.secondary, marginTop: theme.spacing.xs, paddingTop: theme.spacing.xs, paddingLeft: '20px', borderTop: `1px solid ${theme.colors.border.light}` } as React.CSSProperties,
+  errorTitleCompact: { fontSize: theme.typography.fontSize.lg, fontWeight: theme.typography.fontWeight.semibold, color: theme.colors.error, marginBottom: theme.spacing.xs } as React.CSSProperties,
+  errorListCompact: { display: 'flex', flexDirection: 'column', gap: theme.spacing.sm } as React.CSSProperties,
+  errorItemCompact: { padding: theme.spacing.md, backgroundColor: theme.colors.background.secondary, borderRadius: theme.borderRadius.sm, borderLeft: '3px solid' } as React.CSSProperties,
+  errorContentCompact: { display: 'flex', alignItems: 'flex-start', gap: theme.spacing.sm } as React.CSSProperties,
+  errorFieldCompact: { fontWeight: theme.typography.fontWeight.semibold, fontSize: theme.typography.fontSize.lg } as React.CSSProperties,
+  errorMessageCompact: { color: theme.colors.text.primary, fontSize: theme.typography.fontSize.base } as React.CSSProperties,
+  errorHelpCompact: { fontSize: theme.typography.fontSize.sm, color: theme.colors.text.secondary, marginTop: theme.spacing.xs, paddingTop: theme.spacing.xs, paddingLeft: '24px', borderTop: `1px solid ${theme.colors.border.light}` } as React.CSSProperties,
   
   helpButton: { 
     background: 'none', 
