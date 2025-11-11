@@ -3,7 +3,7 @@
  * Detecta: día inválido (9), calibre 23, dígitos extra/faltantes, etc.
  */
 
-import { VALID_CALIBERS, CALIBER_NAMES } from '../constants/calibers';
+import { VALID_CALIBERS, CALIBER_NAMES, JUMBO_CALIBERS } from '../constants/calibers';
 
 export interface ValidationError {
   field: string;
@@ -89,6 +89,7 @@ export function validateBoxCode(code: string): ValidationResult {
   validateShift(shift, errors);
   validateCaliber(caliber, errors);
   validateFormat(format, errors);
+  validateCaliberFormatCombination(caliber, format, errors);
   validateCompany(company, errors);
   validateCounter(counter, errors);
 
@@ -210,6 +211,20 @@ function validateFormat(format: string, errors: ValidationError[]) {
   }
 }
 
+function validateCaliberFormatCombination(caliber: string, format: string, errors: ValidationError[]) {
+  // JUMBO calibers (12 and 14) can ONLY use format 2 (100 JUMBO)
+  if (JUMBO_CALIBERS.includes(caliber as any) && format === '1') {
+    const caliberName = CALIBER_NAMES[caliber] || caliber;
+    errors.push({
+      field: 'formato',
+      position: '9-11',
+      value: `${caliber}-${format}`,
+      message: `Calibre JUMBO (${caliberName}) no puede usar formato 1 (180u). Solo se permite formato 2 (100 JUMBO)`,
+      severity: 'error'
+    });
+  }
+}
+
 function validateCompany(company: string, errors: ValidationError[]) {
   if (!['1', '2', '3', '4', '5'].includes(company)) {
     errors.push({
@@ -256,7 +271,7 @@ export function getErrorHelp(error: ValidationError): string {
     'día de la semana': 'Debe ser 1-7: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 7=Domingo',
     'calibre': `Solo son válidos estos 15 calibres: ${VALID_CALIBERS.join(', ')}. El calibre 23 NO existe.`,
     'turno': 'Turnos: 1=Mañana (06:00-14:00), 2=Tarde (14:00-22:00), 3=Noche (22:00-06:00)',
-    'formato': 'Formatos: 1=180 unidades, 2=100 JUMBO, 3=Docena',
+    'formato': 'Formatos: 1=180 unidades, 2=100 JUMBO, 3=Docena. IMPORTANTE: Calibres JUMBO (12 y 14) solo pueden usar formato 2',
     'empacadora': 'Debe ser 1-9 (no 0)',
     'empresa': 'Empresas: 1=Lomas Altas, 2=Santa Marta, 3=Coliumo, 4=El Monte, 5=Libre',
   };

@@ -62,3 +62,6 @@ export const getCaliberName = (caliber: string): string => {
 /** Cuenta total de calibres válidos */
 export const CALIBER_COUNT = VALID_CALIBERS.length; // 15
 
+/** Calibres JUMBO que requieren formato específico */
+export const JUMBO_CALIBERS = ['12', '14'] as const;
+

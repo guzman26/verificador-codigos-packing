@@ -95,6 +95,7 @@ function isValidCaliber(caliber: string): boolean {
 2. No existe una correlación directa entre el número y el tamaño
 3. El calibre `23` es el error más común reportado
 4. El calibre `10` no existe (la secuencia salta del `09` al `11`)
+5. **JUMBO (calibres 12 y 14)**: No puede usar formato 1 (180u). Solo se permite formato 2 (100 JUMBO)
 
 ---
 
