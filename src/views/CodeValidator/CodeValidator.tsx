@@ -8,6 +8,7 @@ import { playErrorSound, playSuccessSound } from '../../utils/sound';
 
 const CodeValidator: React.FC = () => {
   const [code, setCode] = useState('');
+  const [displayLength, setDisplayLength] = useState(0);
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBoxCode> | null>(null);
   const [history, setHistory] = useState<Array<{ code: string; isValid: boolean; timestamp: Date }>>([]);
   const [expandedHelp, setExpandedHelp] = useState<number | null>(null);
@@ -16,6 +17,11 @@ const CodeValidator: React.FC = () => {
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  // Sincronizar displayLength con code cuando cambia
+  useEffect(() => {
+    setDisplayLength(code.length);
+  }, [code]);
 
   useEffect(() => {
     if (code.length >= 16) {
@@ -42,13 +48,36 @@ const CodeValidator: React.FC = () => {
 
   const handleClear = () => {
     setCode('');
+    setDisplayLength(0);
     setValidationResult(null);
     setExpandedHelp(null);
     inputRef.current?.focus();
   };
 
   const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setCode(e.target.value.replace(/\D/g, ''));
+    const digitsOnly = e.target.value.replace(/\D/g, '').slice(0, 16);
+    setCode(digitsOnly);
+    setDisplayLength(digitsOnly.length);
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedText = e.clipboardData.getData('text');
+    const digitsOnly = pastedText.replace(/\D/g, '').slice(0, 16);
+    setCode(digitsOnly);
+    setDisplayLength(digitsOnly.length);
+    
+    // Forzar actualización del input
+    if (inputRef.current) {
+      inputRef.current.value = digitsOnly;
+    }
+  };
+
+  const handleInput = (e: React.FormEvent<HTMLInputElement>) => {
+    const target = e.target as HTMLInputElement;
+    const digitsOnly = target.value.replace(/\D/g, '').slice(0, 16);
+    setCode(digitsOnly);
+    setDisplayLength(digitsOnly.length);
   };
 
   return (
@@ -76,6 +105,8 @@ const CodeValidator: React.FC = () => {
               type="text"
               value={code}
               onChange={handleCodeChange}
+              onPaste={handlePaste}
+              onInput={handleInput}
               placeholder="0000000000000000"
               maxLength={20}
               style={{
@@ -88,7 +119,7 @@ const CodeValidator: React.FC = () => {
             />
 
             <div style={styles.counter}>
-              {code.length} / 16 dígitos
+              {displayLength} / 16 dígitos
             </div>
 
             {code.length > 0 && (
