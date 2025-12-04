@@ -85,7 +85,7 @@ const CodeValidator: React.FC = () => {
       <header style={styles.header}>
         <Container maxWidth="xl" padding={false}>
           <div style={styles.headerContent}>
-            <h1 style={styles.title}>Validador de Códigos de Cajas</h1>
+            <h1 style={styles.title}>Validador de Códigos de Productos</h1>
             <div style={styles.stats}>
               <StatBadge label="Códigos validados" value={history.length} color={theme.colors.primary} />
               <StatBadge label="Válidos" value={history.filter(h => h.isValid).length} color={theme.colors.success} />
@@ -146,7 +146,7 @@ const CodeValidator: React.FC = () => {
             <RuleCard title="Semana (pos 1-2)" value="01-53" description="Semana ISO del año" />
             <RuleCard title="Turno (pos 8)" value="1, 2, 3" description="1=Mañana, 2=Tarde, 3=Noche" />
             <RuleCard title="Calibre (pos 9-10)" value="15 valores" description="01-09, 11-16" highlight />
-            <RuleCard title="Formato (pos 11)" value="1, 2, 3" description="1=180u, 2=100 JUMBO, 3=Docena" />
+            <RuleCard title="Formato (pos 11)" value="1-6" description="1-3=Cajas, 4-6=Carros" />
             <RuleCard title="Empresa (pos 12)" value="1-5" description="Códigos de empresa válidos" />
           </div>
         </MacWindow>

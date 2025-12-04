@@ -1,6 +1,6 @@
-# 📦 Verificador de Códigos de Cajas
+# 📦 Verificador de Códigos de Productos
 
-**Aplicación standalone para validación de códigos de cajas de 16 dígitos**
+**Aplicación standalone para validación de códigos de productos (cajas y carros) de 16 dígitos**
 
 ## 🎯 Propósito
 
@@ -35,9 +35,21 @@ La aplicación estará disponible en `http://localhost:5173`
 | Empacadora | 7 | 1-9 | Número de máquina (no 0) |
 | Turno | 8 | 1, 2, 3 | 1=Mañana, 2=Tarde, 3=Noche |
 | **Calibre** | **9-10** | **15 valores** | **Ver tabla abajo** |
-| Formato | 11 | 1, 2, 3 | 1=180u, 2=100 JUMBO, 3=Docena |
+| Formato | 11 | 1-6 | 1-3=Cajas, 4-6=Carros (ver tabla abajo) |
 | Empresa | 12 | 1-5 | Código de empresa |
 | Contador | 13-15 | 001-999 | Secuencial (no 000) |
+
+## 📦 Formatos de Producto (6 tipos)
+
+### Cajas (Formatos 1-3)
+- `1` - Caja 180 unidades
+- `2` - Caja 100 JUMBO
+- `3` - Caja Docena
+
+### Carros (Formatos 4-6)
+- `4` - Carro con bandejas de 20u (2400 huevos, 120 bandejas)
+- `5` - Carro con bandejas de 30u (5400 huevos, 180 bandejas)
+- `6` - Carro formato especial
 
 ## 🥚 Calibres Válidos (15 valores)
 

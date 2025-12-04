@@ -20,6 +20,9 @@ export const FORMATS = {
   FORMAT_180: '1',
   FORMAT_100_JUMBO: '2',
   FORMAT_DOZEN: '3',
+  CART_TRAY_20: '4',
+  CART_TRAY_30: '5',
+  CART_SPECIAL: '6',
 } as const;
 
 export const COMPANIES = {
@@ -40,6 +43,6 @@ export const VALIDATION_RULES = {
   PACKER: { min: 1, max: 9 },
   CALIBER_COUNT: CALIBER_COUNT, // 15 calibres válidos
   SHIFT_COUNT: 3,
-  FORMAT_COUNT: 3,
+  FORMAT_COUNT: 6, // 3 formatos de cajas + 3 formatos de carros
   COMPANY_COUNT: 5,
 } as const;

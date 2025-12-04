@@ -29,9 +29,12 @@ export const TURNO_OPTIONS = [
 
 export const FORMATO_OPTIONS = [
   { value: '', label: 'Seleccione un formato' },
-  { value: '1', label: 'Formato 1 (180 unidades)' },
-  { value: '2', label: 'Formato 2 (100 JUMBO)' },
-  { value: '3', label: 'Formato 3 (Docena)' },
+  { value: '1', label: 'Formato 1 - Caja 180 unidades' },
+  { value: '2', label: 'Formato 2 - Caja 100 JUMBO' },
+  { value: '3', label: 'Formato 3 - Caja Docena' },
+  { value: '4', label: 'Formato 4 - Carro Bandejas 20u (2400 huevos)' },
+  { value: '5', label: 'Formato 5 - Carro Bandejas 30u (5400 huevos)' },
+  { value: '6', label: 'Formato 6 - Carro formato especial' },
 ];
 
 export const EMPRESA_OPTIONS = [

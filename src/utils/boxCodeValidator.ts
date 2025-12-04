@@ -34,7 +34,14 @@ export interface ValidationResult {
 
 const DAY_NAMES = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
 const SHIFT_NAMES: Record<string, string> = { '1': 'Mañana (06:00-14:00)', '2': 'Tarde (14:00-22:00)', '3': 'Noche (22:00-06:00)' };
-const FORMAT_NAMES: Record<string, string> = { '1': '180 unidades', '2': '100 JUMBO', '3': 'Docena' };
+const FORMAT_NAMES: Record<string, string> = { 
+  '1': '180 unidades (Caja)', 
+  '2': '100 JUMBO (Caja)', 
+  '3': 'Docena (Caja)',
+  '4': 'Carro - Bandejas 20u (2400 huevos)',
+  '5': 'Carro - Bandejas 30u (5400 huevos)',
+  '6': 'Carro - Formato especial'
+};
 const COMPANY_NAMES: Record<string, string> = { '1': 'Lomas Altas', '2': 'Santa Marta', '3': 'Coliumo', '4': 'El Monte', '5': 'Libre' };
 
 /** Valida un código de caja de 16 dígitos completo */
@@ -200,19 +207,19 @@ function validateCaliber(caliber: string, errors: ValidationError[]) {
 }
 
 function validateFormat(format: string, errors: ValidationError[]) {
-  if (!['1', '2', '3'].includes(format)) {
+  if (!['1', '2', '3', '4', '5', '6'].includes(format)) {
     errors.push({
       field: 'formato',
       position: '11',
       value: format,
-      message: `Formato ${format} es inválido. Debe ser 1 (180u), 2 (100 JUMBO) o 3 (Docena)`,
+      message: `Formato ${format} es inválido. Válidos: 1-3 (Cajas), 4-6 (Carros)`,
       severity: 'error'
     });
   }
 }
 
 function validateCaliberFormatCombination(caliber: string, format: string, errors: ValidationError[]) {
-  // JUMBO calibers (12 and 14) can ONLY use format 2 (100 JUMBO)
+  // JUMBO calibers (12 and 14) can ONLY use format 2 (100 JUMBO) for boxes
   if (JUMBO_CALIBERS.includes(caliber as any) && format === '1') {
     const caliberName = CALIBER_NAMES[caliber] || caliber;
     errors.push({
@@ -220,6 +227,19 @@ function validateCaliberFormatCombination(caliber: string, format: string, error
       position: '9-11',
       value: `${caliber}-${format}`,
       message: `Calibre JUMBO (${caliberName}) no puede usar formato 1 (180u). Solo se permite formato 2 (100 JUMBO)`,
+      severity: 'error'
+    });
+  }
+
+  // Carros (formato 4-6) no deberían usar calibres JUMBO en cajas
+  const isCartFormat = ['4', '5', '6'].includes(format);
+  if (isCartFormat && JUMBO_CALIBERS.includes(caliber as any)) {
+    const caliberName = CALIBER_NAMES[caliber] || caliber;
+    errors.push({
+      field: 'formato',
+      position: '9-11',
+      value: `${caliber}-${format}`,
+      message: `Advertencia: Calibre JUMBO (${caliberName}) con formato de carro. Verifique que sea correcto.`,
       severity: 'error'
     });
   }
@@ -271,7 +291,7 @@ export function getErrorHelp(error: ValidationError): string {
     'día de la semana': 'Debe ser 1-7: 1=Lunes, 2=Martes, 3=Miércoles, 4=Jueves, 5=Viernes, 6=Sábado, 7=Domingo',
     'calibre': `Solo son válidos estos 15 calibres: ${VALID_CALIBERS.join(', ')}. El calibre 23 NO existe.`,
     'turno': 'Turnos: 1=Mañana (06:00-14:00), 2=Tarde (14:00-22:00), 3=Noche (22:00-06:00)',
-    'formato': 'Formatos: 1=180 unidades, 2=100 JUMBO, 3=Docena. IMPORTANTE: Calibres JUMBO (12 y 14) solo pueden usar formato 2',
+    'formato': 'CAJAS: 1=180u, 2=100 JUMBO, 3=Docena. CARROS: 4=Bandejas 20u (2400 huevos), 5=Bandejas 30u (5400 huevos), 6=Especial. IMPORTANTE: Calibres JUMBO (12 y 14) solo pueden usar formato 2 en cajas',
     'empacadora': 'Debe ser 1-9 (no 0)',
     'empresa': 'Empresas: 1=Lomas Altas, 2=Santa Marta, 3=Coliumo, 4=El Monte, 5=Libre',
   };
