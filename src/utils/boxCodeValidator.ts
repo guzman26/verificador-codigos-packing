@@ -33,8 +33,8 @@ export interface ValidationResult {
 }
 
 const DAY_NAMES = ['', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
-const SHIFT_NAMES: Record<string, string> = { '1': 'Mañana (06:00-14:00)', '2': 'Tarde (14:00-22:00)', '3': 'Noche (22:00-06:00)' };
-const FORMAT_NAMES: Record<string, string> = { 
+export const SHIFT_NAMES: Record<string, string> = { '1': 'Mañana (06:00-14:00)', '2': 'Tarde (14:00-22:00)', '3': 'Noche (22:00-06:00)' };
+export const FORMAT_NAMES: Record<string, string> = { 
   '1': '180 unidades (Caja)', 
   '2': '100 JUMBO (Caja)', 
   '3': 'Docena (Caja)',
@@ -42,7 +42,7 @@ const FORMAT_NAMES: Record<string, string> = {
   '5': 'Carro - Bandejas 30u (5400 huevos)',
   '6': 'Carro - Formato especial'
 };
-const COMPANY_NAMES: Record<string, string> = { '1': 'Lomas Altas', '2': 'Santa Marta', '3': 'Coliumo', '4': 'El Monte', '5': 'Libre' };
+export const COMPANY_NAMES: Record<string, string> = { '1': 'Lomas Altas', '2': 'Santa Marta', '3': 'Coliumo', '4': 'El Monte', '5': 'Libre' };
 
 /** Valida un código de caja de 16 dígitos completo */
 export function validateBoxCode(code: string): ValidationResult {
@@ -296,4 +296,66 @@ export function getErrorHelp(error: ValidationError): string {
     'empresa': 'Empresas: 1=Lomas Altas, 2=Santa Marta, 3=Coliumo, 4=El Monte, 5=Libre',
   };
   return helpMessages[error.field] || '';
+}
+
+/** Parámetros esperados para comparar con el código */
+export interface ExpectedParams {
+  shift?: string;
+  format?: string;
+  company?: string;
+}
+
+/** Resultado de comparación de un parámetro */
+export interface ParamComparisonResult {
+  field: string;
+  expected: string;
+  actual: string;
+  expectedLabel: string;
+  actualLabel: string;
+  matches: boolean;
+}
+
+/** Compara los datos parseados del código con los parámetros esperados */
+export function compareCodeWithExpectedParams(
+  parsedData: ValidationResult['parsedData'],
+  expectedParams: ExpectedParams
+): ParamComparisonResult[] {
+  if (!parsedData) return [];
+  
+  const results: ParamComparisonResult[] = [];
+  
+  if (expectedParams.shift) {
+    results.push({
+      field: 'Turno',
+      expected: expectedParams.shift,
+      actual: parsedData.shift,
+      expectedLabel: SHIFT_NAMES[expectedParams.shift],
+      actualLabel: SHIFT_NAMES[parsedData.shift],
+      matches: expectedParams.shift === parsedData.shift
+    });
+  }
+  
+  if (expectedParams.format) {
+    results.push({
+      field: 'Formato',
+      expected: expectedParams.format,
+      actual: parsedData.format,
+      expectedLabel: FORMAT_NAMES[expectedParams.format],
+      actualLabel: FORMAT_NAMES[parsedData.format],
+      matches: expectedParams.format === parsedData.format
+    });
+  }
+  
+  if (expectedParams.company) {
+    results.push({
+      field: 'Empresa',
+      expected: expectedParams.company,
+      actual: parsedData.company,
+      expectedLabel: COMPANY_NAMES[expectedParams.company],
+      actualLabel: COMPANY_NAMES[parsedData.company],
+      matches: expectedParams.company === parsedData.company
+    });
+  }
+  
+  return results;
 }

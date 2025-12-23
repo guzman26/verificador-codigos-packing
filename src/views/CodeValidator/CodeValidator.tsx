@@ -1,9 +1,17 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Container, Button, MacWindow } from '../../components/ui';
-import { CheckCircle, XCircle, AlertTriangle, Info, RotateCcw } from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
+import { Container, Button, MacWindow, Select } from '../../components/ui';
+import { CheckCircle, XCircle, AlertTriangle, Info, RotateCcw, Filter } from 'lucide-react';
 import { theme } from '../../styles/theme';
-import { validateBoxCode, getReadableInfo, getErrorHelp } from '../../utils/boxCodeValidator';
-import type { ValidationError } from '../../utils/boxCodeValidator';
+import { 
+  validateBoxCode, 
+  getReadableInfo, 
+  getErrorHelp, 
+  compareCodeWithExpectedParams,
+  SHIFT_NAMES,
+  FORMAT_NAMES,
+  COMPANY_NAMES
+} from '../../utils/boxCodeValidator';
+import type { ValidationError, ExpectedParams, ParamComparisonResult } from '../../utils/boxCodeValidator';
 import { playErrorSound, playSuccessSound } from '../../utils/sound';
 
 const CodeValidator: React.FC = () => {
@@ -12,7 +20,35 @@ const CodeValidator: React.FC = () => {
   const [validationResult, setValidationResult] = useState<ReturnType<typeof validateBoxCode> | null>(null);
   const [history, setHistory] = useState<Array<{ code: string; isValid: boolean; timestamp: Date }>>([]);
   const [expandedHelp, setExpandedHelp] = useState<number | null>(null);
+  const [expectedParams, setExpectedParams] = useState<ExpectedParams>({});
+  const [showFilters, setShowFilters] = useState(true);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Opciones para los dropdowns
+  const shiftOptions = useMemo(() => [
+    { value: '', label: 'Sin filtrar' },
+    ...Object.entries(SHIFT_NAMES).map(([value, label]) => ({ value, label }))
+  ], []);
+
+  const formatOptions = useMemo(() => [
+    { value: '', label: 'Sin filtrar' },
+    ...Object.entries(FORMAT_NAMES).map(([value, label]) => ({ value, label }))
+  ], []);
+
+  const companyOptions = useMemo(() => [
+    { value: '', label: 'Sin filtrar' },
+    ...Object.entries(COMPANY_NAMES).map(([value, label]) => ({ value, label }))
+  ], []);
+
+  // Comparación de parámetros esperados
+  const comparisonResults = useMemo(() => {
+    if (!validationResult?.isValid || !validationResult.parsedData) return [];
+    return compareCodeWithExpectedParams(validationResult.parsedData, expectedParams);
+  }, [validationResult, expectedParams]);
+
+  const hasActiveFilters = expectedParams.shift || expectedParams.format || expectedParams.company;
+  const allFiltersMatch = comparisonResults.length > 0 && comparisonResults.every(r => r.matches);
+  const someFiltersFail = comparisonResults.length > 0 && comparisonResults.some(r => !r.matches);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -96,6 +132,61 @@ const CodeValidator: React.FC = () => {
       </header>
 
       <Container maxWidth="xl" style={styles.content}>
+        {/* Filtros de Parámetros Esperados */}
+        <MacWindow title="Parámetros Esperados" width="100%" height="auto" resizable={false}>
+          <div style={styles.filtersSection}>
+            <div style={styles.filtersHeader}>
+              <button 
+                style={styles.filterToggle}
+                onClick={() => setShowFilters(!showFilters)}
+              >
+                <Filter size={16} />
+                {showFilters ? 'Ocultar filtros' : 'Mostrar filtros'}
+              </button>
+              {hasActiveFilters && (
+                <span style={styles.activeFiltersLabel}>
+                  {comparisonResults.length} filtro(s) activo(s)
+                </span>
+              )}
+            </div>
+            
+            {showFilters && (
+              <div style={styles.filtersGrid}>
+                <Select
+                  label="Turno"
+                  options={shiftOptions}
+                  value={expectedParams.shift || ''}
+                  onChange={(e) => setExpectedParams(prev => ({ 
+                    ...prev, 
+                    shift: e.target.value || undefined 
+                  }))}
+                  fullWidth
+                />
+                <Select
+                  label="Formato"
+                  options={formatOptions}
+                  value={expectedParams.format || ''}
+                  onChange={(e) => setExpectedParams(prev => ({ 
+                    ...prev, 
+                    format: e.target.value || undefined 
+                  }))}
+                  fullWidth
+                />
+                <Select
+                  label="Empresa"
+                  options={companyOptions}
+                  value={expectedParams.company || ''}
+                  onChange={(e) => setExpectedParams(prev => ({ 
+                    ...prev, 
+                    company: e.target.value || undefined 
+                  }))}
+                  fullWidth
+                />
+              </div>
+            )}
+          </div>
+        </MacWindow>
+
         <MacWindow title="Escanear Código" width="100%" height="auto" resizable={false}>
           <div style={styles.inputSection}>
             <label style={styles.label}>Escanee o ingrese el código de 16 dígitos:</label>
@@ -129,11 +220,20 @@ const CodeValidator: React.FC = () => {
             )}
 
             {validationResult && (
-              <ValidationResultCompact 
-                result={validationResult} 
-                expandedHelp={expandedHelp}
-                onToggleHelp={setExpandedHelp}
-              />
+              <>
+                <ValidationResultCompact 
+                  result={validationResult} 
+                  expandedHelp={expandedHelp}
+                  onToggleHelp={setExpandedHelp}
+                />
+                {validationResult.isValid && hasActiveFilters && (
+                  <ParamComparisonSection 
+                    results={comparisonResults}
+                    allMatch={allFiltersMatch}
+                    someFail={someFiltersFail}
+                  />
+                )}
+              </>
             )}
 
             {!validationResult && <InstructionsCardCompact />}
@@ -287,6 +387,61 @@ const InstructionsCardCompact: React.FC = () => (
   </div>
 );
 
+const ParamComparisonSection: React.FC<{
+  results: ParamComparisonResult[];
+  allMatch: boolean;
+  someFail: boolean;
+}> = ({ results, allMatch, someFail }) => {
+  const bgColor = allMatch 
+    ? 'rgba(34, 197, 94, 0.1)' 
+    : someFail 
+    ? 'rgba(239, 68, 68, 0.1)' 
+    : 'rgba(59, 130, 246, 0.1)';
+  const borderColor = allMatch 
+    ? theme.colors.success 
+    : someFail 
+    ? theme.colors.error 
+    : theme.colors.primary;
+
+  return (
+    <div style={{ ...styles.comparisonSection, backgroundColor: bgColor, borderColor }}>
+      <div style={styles.comparisonHeader}>
+        {allMatch ? (
+          <CheckCircle size={20} color={theme.colors.success} />
+        ) : (
+          <XCircle size={20} color={theme.colors.error} />
+        )}
+        <h3 style={{ ...styles.comparisonTitle, color: borderColor }}>
+          {allMatch ? 'Todos los parámetros coinciden' : 'Algunos parámetros no coinciden'}
+        </h3>
+      </div>
+      <div style={styles.comparisonList}>
+        {results.map((result, i) => (
+          <div key={i} style={styles.comparisonItem}>
+            <span style={styles.comparisonField}>{result.field}:</span>
+            {result.matches ? (
+              <span style={styles.comparisonMatch}>
+                <CheckCircle size={14} color={theme.colors.success} />
+                {result.actualLabel}
+              </span>
+            ) : (
+              <span style={styles.comparisonMismatch}>
+                <XCircle size={14} color={theme.colors.error} />
+                <span>
+                  Esperado: <strong>{result.expectedLabel}</strong>
+                </span>
+                <span style={styles.comparisonActual}>
+                  Actual: <strong>{result.actualLabel}</strong>
+                </span>
+              </span>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
 const RuleCard: React.FC<{ title: string; value: string; description: string; highlight?: boolean }> = ({ 
   title, value, description, highlight 
 }) => (
@@ -310,6 +465,32 @@ const styles = {
   statLabel: { color: theme.colors.text.secondary, fontSize: theme.typography.fontSize.xs } as React.CSSProperties,
   statValue: { fontWeight: theme.typography.fontWeight.semibold, fontSize: theme.typography.fontSize.sm } as React.CSSProperties,
   content: { flex: 1, display: 'flex', flexDirection: 'column', gap: theme.spacing.lg, paddingTop: theme.spacing.lg, paddingBottom: theme.spacing.xl } as React.CSSProperties,
+  
+  // Filter section styles
+  filtersSection: { padding: theme.spacing.md } as React.CSSProperties,
+  filtersHeader: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: theme.spacing.md } as React.CSSProperties,
+  filterToggle: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: theme.spacing.xs, 
+    background: 'none', 
+    border: `1px solid ${theme.colors.border.light}`, 
+    borderRadius: theme.borderRadius.sm, 
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`, 
+    cursor: 'pointer',
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.sm,
+    transition: 'all 0.2s ease'
+  } as React.CSSProperties,
+  activeFiltersLabel: { 
+    fontSize: theme.typography.fontSize.xs, 
+    color: theme.colors.primary, 
+    padding: `${theme.spacing.xs} ${theme.spacing.sm}`, 
+    backgroundColor: `${theme.colors.primary}20`, 
+    borderRadius: theme.borderRadius.sm 
+  } as React.CSSProperties,
+  filtersGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: theme.spacing.md } as React.CSSProperties,
+
   inputSection: { padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.md, alignItems: 'center' } as React.CSSProperties,
   label: { fontSize: theme.typography.fontSize.base, fontWeight: theme.typography.fontWeight.medium, color: theme.colors.text.primary } as React.CSSProperties,
   input: { fontSize: '1.8rem', fontWeight: theme.typography.fontWeight.bold, fontFamily: 'monospace', padding: theme.spacing.md, border: '2px solid', borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.background.secondary, color: theme.colors.text.primary, textAlign: 'center', letterSpacing: '0.1em', outline: 'none', transition: 'all 0.2s ease', width: '100%', maxWidth: '500px' } as React.CSSProperties,
@@ -352,6 +533,61 @@ const styles = {
   ruleLabel: { fontSize: theme.typography.fontSize.xs, color: theme.colors.text.secondary, fontWeight: theme.typography.fontWeight.medium, marginBottom: '2px' } as React.CSSProperties,
   ruleValue: { fontSize: theme.typography.fontSize.base, color: theme.colors.text.primary, fontWeight: theme.typography.fontWeight.semibold, marginBottom: '2px' } as React.CSSProperties,
   ruleDescription: { fontSize: theme.typography.fontSize.xs, color: theme.colors.text.secondary } as React.CSSProperties,
+
+  // Comparison section styles
+  comparisonSection: { 
+    padding: theme.spacing.md, 
+    borderRadius: theme.borderRadius.md, 
+    border: '2px solid', 
+    marginTop: theme.spacing.md, 
+    width: '100%', 
+    maxWidth: '800px' 
+  } as React.CSSProperties,
+  comparisonHeader: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: theme.spacing.sm, 
+    marginBottom: theme.spacing.sm 
+  } as React.CSSProperties,
+  comparisonTitle: { 
+    fontSize: theme.typography.fontSize.base, 
+    fontWeight: theme.typography.fontWeight.semibold, 
+    margin: 0 
+  } as React.CSSProperties,
+  comparisonList: { 
+    display: 'flex', 
+    flexDirection: 'column', 
+    gap: theme.spacing.sm 
+  } as React.CSSProperties,
+  comparisonItem: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: theme.spacing.sm, 
+    padding: theme.spacing.sm, 
+    backgroundColor: theme.colors.background.secondary, 
+    borderRadius: theme.borderRadius.sm 
+  } as React.CSSProperties,
+  comparisonField: { 
+    fontWeight: theme.typography.fontWeight.medium, 
+    color: theme.colors.text.secondary, 
+    minWidth: '80px' 
+  } as React.CSSProperties,
+  comparisonMatch: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: theme.spacing.xs, 
+    color: theme.colors.success 
+  } as React.CSSProperties,
+  comparisonMismatch: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: theme.spacing.sm, 
+    color: theme.colors.error, 
+    flexWrap: 'wrap' 
+  } as React.CSSProperties,
+  comparisonActual: { 
+    color: theme.colors.text.secondary 
+  } as React.CSSProperties,
 };
 
 export default CodeValidator;
