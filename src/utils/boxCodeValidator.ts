@@ -92,7 +92,7 @@ export function validateBoxCode(code: string): ValidationResult {
   validateWeekOfYear(weekOfYear, errors);
   validateYearRange(year, warnings);
   validateOperator(operator, warnings);
-  validatePacker(packer, errors);
+  validatePacker(packer, caliber, errors);
   validateShift(shift, errors);
   validateCaliber(caliber, errors);
   validateFormat(format, errors);
@@ -163,14 +163,25 @@ function validateOperator(operator: string, warnings: ValidationError[]) {
   }
 }
 
-function validatePacker(packer: string, errors: ValidationError[]) {
+function validatePacker(packer: string, caliber: string, errors: ValidationError[]) {
   const packerNum = parseInt(packer);
+  const isCaliberSucioTrizo = caliber === '08';
+  
+  // Empacadora 0 solo es válida para calibre 08 (SUCIO / TRIZADO)
+  if (packerNum === 0 && isCaliberSucioTrizo) {
+    return; // Valid: packer 0 allowed for caliber 08
+  }
+  
   if (packerNum < 1 || packerNum > 9) {
+    const message = packerNum === 0
+      ? `Empacadora 0 solo es válida para calibre 08 (SUCIO/TRIZADO). Calibre actual: ${caliber}`
+      : `Empacadora ${packer} es inválida. Debe ser 1-9 (o 0 solo para calibre 08)`;
+    
     errors.push({
       field: 'empacadora',
       position: '7',
       value: packer,
-      message: `Empacadora ${packer} es inválida. Debe ser 1-9`,
+      message,
       severity: 'error'
     });
   }
@@ -292,7 +303,7 @@ export function getErrorHelp(error: ValidationError): string {
     'calibre': `Solo son válidos estos 15 calibres: ${VALID_CALIBERS.join(', ')}. El calibre 23 NO existe.`,
     'turno': 'Turnos: 1=Mañana (06:00-14:00), 2=Tarde (14:00-22:00), 3=Noche (22:00-06:00)',
     'formato': 'CAJAS: 1=180u, 2=100 JUMBO, 3=Docena. CARROS: 4=Bandejas 20u (2400 huevos), 5=Bandejas 30u (5400 huevos), 6=Especial. IMPORTANTE: Calibres JUMBO (12 y 14) solo pueden usar formato 2 en cajas',
-    'empacadora': 'Debe ser 1-9 (no 0)',
+    'empacadora': 'Debe ser 1-9. Excepción: empacadora 0 es válida solo para calibre 08 (SUCIO/TRIZADO)',
     'empresa': 'Empresas: 1=Lomas Altas, 2=Santa Marta, 3=Coliumo, 4=El Monte, 5=Libre',
   };
   return helpMessages[error.field] || '';
