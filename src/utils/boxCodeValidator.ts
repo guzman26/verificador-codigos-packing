@@ -165,11 +165,11 @@ function validateOperator(operator: string, warnings: ValidationError[]) {
 
 function validatePacker(packer: string, caliber: string, errors: ValidationError[]) {
   const packerNum = parseInt(packer);
-  const isCaliberSucioTrizo = caliber === '08';
+  // Empacadora 0 solo es válida para calibre 08 o 8 (SUCIO / TRIZADO)
+  const isCaliberSucioTrizo = caliber === '08' || caliber === '8';
   
-  // Empacadora 0 solo es válida para calibre 08 (SUCIO / TRIZADO)
   if (packerNum === 0 && isCaliberSucioTrizo) {
-    return; // Valid: packer 0 allowed for caliber 08
+    return; // Valid: packer 0 allowed for caliber 08 or 8
   }
   
   if (packerNum < 1 || packerNum > 9) {
